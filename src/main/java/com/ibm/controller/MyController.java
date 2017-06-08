@@ -21,11 +21,11 @@ import org.hyperledger.fabric.sdk.exception.ChainCodeException;
 import org.hyperledger.fabric.sdk.exception.CryptoException;
 import org.hyperledger.fabric.sdk.exception.NoAvailableTCertException;
 import org.springframework.boot.SpringApplication;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.stereotype.*;
-import org.springframework.beans.factory.annotation.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.http.MediaType;
+import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -39,6 +39,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @EnableAutoConfiguration
 @Component
 @ComponentScan("com.ibm.controller")
+@CrossOrigin(origins = "http://192.168.0.31:3000")
 public class MyController {
 
 	private static Log logger = LogFactory.getLog(MyController.class);
