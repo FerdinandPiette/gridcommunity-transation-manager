@@ -97,9 +97,11 @@ public class MyController {
 		args.add("10");
 		args.add("42");
 		deployRequest.setArgs(args);
-		// deployRequest.setChaincodePath(Paths.get(System.getProperty("user.home"),
-		// "git", "JavaCDD").toString());
-		deployRequest.setChaincodePath(Paths.get("/", "tmp", "JavaCDD").toString());
+		deployRequest.setChaincodePath(
+				Paths.get(System.getProperty("user.home"), "gridcommunity-fabweek-toulon", "gridcommunity-chaincode")
+						.toString());
+		// deployRequest.setChaincodePath(Paths.get("/", "tmp",
+		// "JavaCDD").toString());
 		// deployRequest.setChaincodePath(Paths.get("/chaincode/JavaCDD").toString());
 		deployRequest.setChaincodeLanguage(ChaincodeLanguage.JAVA);
 		deployRequest.setChaincodeName(chain.getName());
