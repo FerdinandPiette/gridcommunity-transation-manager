@@ -41,144 +41,143 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @ComponentScan("com.ibm.controller")
 public class MyController {
 
-    private static Log logger = LogFactory.getLog(MyController.class);
+	private static Log logger = LogFactory.getLog(MyController.class);
 
-    private Member registrar;
+	private Member registrar;
 
-    private String chainCodeID;
-    
-    private Chain chain;
+	private String chainCodeID;
 
-    private String ledgerHost="192.168.0.14";
+	private Chain chain;
 
-    public MyController() throws Exception {
+	private String ledgerHost = "192.168.0.14";
 
-        if (ledgerHost == null)
-            throw new IllegalArgumentException("Please provide system variable ledgerHost");
+	public MyController() throws Exception {
 
-        logger.info("In MyController constructor ...");
+		if (ledgerHost == null)
+			throw new IllegalArgumentException("Please provide system variable ledgerHost");
 
-         chain = new Chain("javacdd");
-         chain.setDeployWaitTime(60*5);
-        try {
+		logger.info("In MyController constructor ...");
 
-            chain.setMemberServicesUrl("grpc://"+ledgerHost+":7054", null);
-            // create FileKeyValStore
-            Path path = Paths.get(System.getProperty("user.home"), "/test.properties");
-            if (Files.notExists(path))
-                Files.createFile(path);
-            chain.setKeyValStore(new FileKeyValStore(path.toString()));
-            chain.addPeer("grpc://"+ledgerHost+":7051", null);
+		chain = new Chain("javacdd");
+		chain.setDeployWaitTime(60 * 5);
+		try {
 
-            registrar = chain.getMember("admin");
-            if (!registrar.isEnrolled()) {
-                registrar = chain.enroll("admin", "Xurw3yU9zI0l");
-            }
-            logger.info("registrar is :" + registrar.getName() + ",secret:" + registrar.getEnrollmentSecret());
-            chain.setRegistrar(registrar);
-            chain.eventHubConnect("grpc://"+ledgerHost+":7053", null);
+			chain.setMemberServicesUrl("grpc://" + ledgerHost + ":7054", null);
+			// create FileKeyValStore
+			Path path = Paths.get(System.getProperty("user.home"), "/test.properties");
+			if (Files.notExists(path))
+				Files.createFile(path);
+			chain.setKeyValStore(new FileKeyValStore(path.toString()));
+			chain.addPeer("grpc://" + ledgerHost + ":7051", null);
 
-            chainCodeID = deploy();
+			registrar = chain.getMember("admin");
+			if (!registrar.isEnrolled()) {
+				registrar = chain.enroll("admin", "Xurw3yU9zI0l");
+			}
+			logger.info("registrar is :" + registrar.getName() + ",secret:" + registrar.getEnrollmentSecret());
+			chain.setRegistrar(registrar);
+			chain.eventHubConnect("grpc://" + ledgerHost + ":7053", null);
 
-        } catch (CertificateException | IOException  e) {
-            logger.error(e.getMessage(), e);
-            throw new Exception(e);
-        }
-        logger.info("Out MyController constructor.");
+			chainCodeID = deploy();
 
-    }
+		} catch (CertificateException | IOException e) {
+			logger.error(e.getMessage(), e);
+			throw new Exception(e);
+		}
+		logger.info("Out MyController constructor.");
 
-    String deploy() throws ChainCodeException, NoAvailableTCertException, CryptoException, IOException {
-        DeployRequest deployRequest = new DeployRequest();
-        ArrayList<String> args = new ArrayList<String>();
-        args.add("init");
-        args.add("farmer");
-        args.add("10");
-        args.add("42");
-        deployRequest.setArgs(args);
-        //deployRequest.setChaincodePath(Paths.get(System.getProperty("user.home"), "git", "JavaCDD").toString());
-        deployRequest.setChaincodePath(Paths.get("/","tmp", "JavaCDD").toString());
-        // deployRequest.setChaincodePath(Paths.get("/chaincode/JavaCDD").toString());
-        deployRequest.setChaincodeLanguage(ChaincodeLanguage.JAVA);
-        deployRequest.setChaincodeName(chain.getName());
+	}
 
-        ChainCodeResponse chainCodeResponse = registrar.deploy(deployRequest);
-        return chainCodeResponse.getChainCodeID();
-    }
+	String deploy() throws ChainCodeException, NoAvailableTCertException, CryptoException, IOException {
+		DeployRequest deployRequest = new DeployRequest();
+		ArrayList<String> args = new ArrayList<String>();
+		args.add("init");
+		args.add("farmer");
+		args.add("10");
+		args.add("42");
+		deployRequest.setArgs(args);
+		// deployRequest.setChaincodePath(Paths.get(System.getProperty("user.home"),
+		// "git", "JavaCDD").toString());
+		deployRequest.setChaincodePath(Paths.get("/", "tmp", "JavaCDD").toString());
+		// deployRequest.setChaincodePath(Paths.get("/chaincode/JavaCDD").toString());
+		deployRequest.setChaincodeLanguage(ChaincodeLanguage.JAVA);
+		deployRequest.setChaincodeName(chain.getName());
 
-    @RequestMapping(method = RequestMethod.GET, path = "/executeContract", produces = { MediaType.APPLICATION_JSON_VALUE })
-    @ResponseBody
-    String executeContract(@RequestParam String clientName, @RequestParam String postalCode,
-            @RequestParam String countryCode) throws JsonProcessingException {
+		ChainCodeResponse chainCodeResponse = registrar.deploy(deployRequest);
+		return chainCodeResponse.getChainCodeID();
+	}
 
-        logger.info("Calling /executeContract ...");
+	@RequestMapping(method = RequestMethod.GET, path = "/executeContract", produces = {
+			MediaType.APPLICATION_JSON_VALUE })
+	@ResponseBody
+	String executeContract(@RequestParam String function, @RequestParam String clientName, @RequestParam String amount)
+			throws JsonProcessingException {
 
-        InvokeRequest invokeRequest = new InvokeRequest();
-        ArrayList<String> args = new ArrayList<String>();
-        args.add("executeContract");
-        args.add(clientName);
-        args.add(postalCode);
-        args.add(countryCode);
-        invokeRequest.setArgs(args);
-        invokeRequest.setChaincodeLanguage(ChaincodeLanguage.JAVA);
-        invokeRequest.setChaincodeID(chainCodeID);
-        invokeRequest.setChaincodeName(chain.getName());
+		logger.info("Calling /executeContract ...");
 
-        try {
-            
-            
-            ChainCodeResponse chainCodeResponse = registrar.invoke(invokeRequest);
-            logger.info("End call /executeContract.");
+		InvokeRequest invokeRequest = new InvokeRequest();
+		ArrayList<String> args = new ArrayList<String>();
+		args.add(function);
+		args.add(clientName);
+		args.add(amount);
+		invokeRequest.setArgs(args);
+		invokeRequest.setChaincodeLanguage(ChaincodeLanguage.JAVA);
+		invokeRequest.setChaincodeID(chainCodeID);
+		invokeRequest.setChaincodeName(chain.getName());
 
-            return new ObjectMapper().writeValueAsString(chainCodeResponse);
-        } catch (ChainCodeException | NoAvailableTCertException | CryptoException | IOException e) {
-            logger.error("Error", e);
-            return new ObjectMapper().writeValueAsString(e);
-        }
+		try {
 
-    }
+			ChainCodeResponse chainCodeResponse = registrar.invoke(invokeRequest);
+			logger.info("End call /executeContract.");
 
-    @RequestMapping(method = RequestMethod.GET, path = "/query", produces = { MediaType.APPLICATION_JSON_VALUE })
-    @ResponseBody
-    String query(@RequestParam String clientName) throws JsonProcessingException {
+			return new ObjectMapper().writeValueAsString(chainCodeResponse);
+		} catch (ChainCodeException | NoAvailableTCertException | CryptoException | IOException e) {
+			logger.error("Error", e);
+			return new ObjectMapper().writeValueAsString(e);
+		}
 
-        logger.info("Calling /query ...");
+	}
 
-        QueryRequest queryRequest = new QueryRequest();
-        ArrayList<String> args = new ArrayList<String>();
-        args.add("query");
-        args.add(clientName);
-        queryRequest.setArgs(args);
-        queryRequest.setChaincodeLanguage(ChaincodeLanguage.JAVA);
-        queryRequest.setChaincodeID(chainCodeID);
+	@RequestMapping(method = RequestMethod.GET, path = "/query", produces = { MediaType.APPLICATION_JSON_VALUE })
+	@ResponseBody
+	String query(@RequestParam String clientName) throws JsonProcessingException {
 
-        try {
-            ChainCodeResponse chainCodeResponse = registrar.query(queryRequest);
-            logger.info("End call /query.");
+		logger.info("Calling /query ...");
 
-            return new ObjectMapper().writeValueAsString(chainCodeResponse);
-        } catch (ChainCodeException | NoAvailableTCertException | CryptoException | IOException e) {
-            logger.error("Error", e);
-            return new ObjectMapper().writeValueAsString(e);
-        }
+		QueryRequest queryRequest = new QueryRequest();
+		ArrayList<String> args = new ArrayList<String>();
+		args.add("query");
+		args.add(clientName);
+		queryRequest.setArgs(args);
+		queryRequest.setChaincodeLanguage(ChaincodeLanguage.JAVA);
+		queryRequest.setChaincodeID(chainCodeID);
 
-        
-    }
+		try {
+			ChainCodeResponse chainCodeResponse = registrar.query(queryRequest);
+			logger.info("End call /query.");
 
-    @RequestMapping(method = RequestMethod.GET, path = "/chain", produces = { MediaType.APPLICATION_JSON_VALUE })
-    @ResponseBody
-    String chain() {
+			return new ObjectMapper().writeValueAsString(chainCodeResponse);
+		} catch (ChainCodeException | NoAvailableTCertException | CryptoException | IOException e) {
+			logger.error("Error", e);
+			return new ObjectMapper().writeValueAsString(e);
+		}
 
-        logger.info("Calling /chain ...");
-        logger.info("{name:\"" + registrar.getChain().getName() + "\",peersCount:"
-                + registrar.getChain().getPeers().size() + "}");
-        return "{\"name\":\"" + registrar.getChain().getName() + "\",\"peersCount\":"
-                + registrar.getChain().getPeers().size() + "}";
+	}
 
-    }
+	@RequestMapping(method = RequestMethod.GET, path = "/chain", produces = { MediaType.APPLICATION_JSON_VALUE })
+	@ResponseBody
+	String chain() {
 
-    public static void main(String[] args) throws Exception {
-        SpringApplication.run(MyController.class, args);
-    }
+		logger.info("Calling /chain ...");
+		logger.info("{name:\"" + registrar.getChain().getName() + "\",peersCount:"
+				+ registrar.getChain().getPeers().size() + "}");
+		return "{\"name\":\"" + registrar.getChain().getName() + "\",\"peersCount\":"
+				+ registrar.getChain().getPeers().size() + "}";
+
+	}
+
+	public static void main(String[] args) throws Exception {
+		SpringApplication.run(MyController.class, args);
+	}
 
 }
